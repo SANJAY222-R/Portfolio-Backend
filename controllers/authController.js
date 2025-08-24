@@ -49,13 +49,13 @@ export const forgotPassword = async (req, res) => {
     const user = await User.findUserByEmail(email);
 
     if (user) {
-      // 1. Generate a temporary, unhashed token
+
       const resetToken = crypto.randomBytes(32).toString("hex");
 
-      // 2. Create the reset URL for your React frontend
+   
       const resetURL = `http://localhost:3000/reset-password/${resetToken}`;
 
-      // 3. Create the email message
+    
       const message = `
                 <h1>You have requested a password reset</h1>
                 <p>Please click on the following link to reset your password:</p>
@@ -65,14 +65,14 @@ export const forgotPassword = async (req, res) => {
             `;
 
       try {
-        // 4. Send the email
+      
         await sendEmail({
           to: user.email,
           subject: "Password Reset Request",
           html: message,
         });
 
-        // 5. Hash the token and save it to the database ONLY if email is sent
+     
         const hashedToken = crypto
           .createHash("sha256")
           .update(resetToken)
@@ -80,7 +80,7 @@ export const forgotPassword = async (req, res) => {
         const tokenExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
         await User.setResetToken(email, hashedToken, tokenExpiry);
       } catch (emailError) {
-        // If email sending fails, clear any token you might have set and inform the user
+
         await User.setResetToken(email, null, null);
         console.log(emailError);
         return res
@@ -89,7 +89,6 @@ export const forgotPassword = async (req, res) => {
       }
     }
 
-    // Always return a generic success message to prevent email enumeration
     res
       .status(200)
       .json({
