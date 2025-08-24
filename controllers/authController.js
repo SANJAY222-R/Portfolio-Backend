@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 import User from "../models/authModel.js";
 import { sendEmail } from "../utils/sendEmail.js";
 import bcrypt from "bcrypt";
@@ -49,13 +51,10 @@ export const forgotPassword = async (req, res) => {
     const user = await User.findUserByEmail(email);
 
     if (user) {
-
       const resetToken = crypto.randomBytes(32).toString("hex");
 
-   
-      const resetURL = `http://localhost:3000/reset-password/${resetToken}`;
+      const resetURL = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
-    
       const message = `
                 <h1>You have requested a password reset</h1>
                 <p>Please click on the following link to reset your password:</p>
@@ -65,14 +64,12 @@ export const forgotPassword = async (req, res) => {
             `;
 
       try {
-      
         await sendEmail({
           to: user.email,
           subject: "Password Reset Request",
           html: message,
         });
 
-     
         const hashedToken = crypto
           .createHash("sha256")
           .update(resetToken)
@@ -80,7 +77,6 @@ export const forgotPassword = async (req, res) => {
         const tokenExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
         await User.setResetToken(email, hashedToken, tokenExpiry);
       } catch (emailError) {
-
         await User.setResetToken(email, null, null);
         console.log(emailError);
         return res
@@ -89,12 +85,10 @@ export const forgotPassword = async (req, res) => {
       }
     }
 
-    res
-      .status(200)
-      .json({
-        message:
-          "If an account with that email exists, a password reset link has been sent.",
-      });
+    res.status(200).json({
+      message:
+        "If an account with that email exists, a password reset link has been sent.",
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Server error" });
@@ -102,9 +96,9 @@ export const forgotPassword = async (req, res) => {
 };
 
 export const resetPassword = async (req, res) => {
-   const { token } = req.params;
+  const { token } = req.params;
   const { password } = req.body;
-  
+
   try {
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
