@@ -1,4 +1,4 @@
-import * as User from "../models/authModel.js";
+import User from "../models/authModel.js"; // Updated import
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -46,22 +46,16 @@ export const forgotPassword = async (req, res) => {
     const { email } = req.body;
     try {
         const user = await User.findUserByEmail(email);
-        if (!user) {
-            return res.status(404).json({ message: "User with that email does not exist." });
+
+        if (user) {
+            const resetToken = crypto.randomBytes(32).toString("hex");
+            const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+            const tokenExpiry = Date.now() + 10 * 60 * 1000;
+
+            await User.setResetToken(email, hashedToken, tokenExpiry);
         }
-
-        const resetToken = crypto.randomBytes(32).toString("hex");
-        const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
         
-        const tokenExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
-
-        await User.setResetToken(email, hashedToken, tokenExpiry);
-        
-        // In a real app, you would email this token to the user.
-        // For this example, we will return it in the response.
-        console.log(`Reset Token for ${email}: ${resetToken}`);
-        
-        res.status(200).json({ message: "Password reset token generated.", resetToken: resetToken });
+        res.status(200).json({ message: "If an account with that email exists, a password reset link has been sent." });
 
     } catch (error) {
         console.log(error);
